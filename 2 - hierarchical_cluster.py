@@ -22,7 +22,7 @@ x = np.multiply(x,weights)
 
 # filter out some data
 idx = []
-downsample_ratio = 10000
+downsample_ratio = 100
 
 include = ['blue moon', 'yazhoo', 'coors', 'miller', 'abita', 'new belgium', 'good people', 'distihl', 'laguanitas', 'dogfish', 'smith and lentz', 'black abbey']
 for i in range(0,len(names)):
