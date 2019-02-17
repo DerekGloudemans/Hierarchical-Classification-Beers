@@ -165,8 +165,8 @@ for i in range(0,len(beer_list)):
     x4[i,idx2] = 1
     
 # compile all features
-x = np.concatenate((x1,x2,x3,x4),1)
-labels = additional_labels + style_labels + short_name_labels + all_tags
+x = np.concatenate((x2,x3,x4,x1),1)
+labels = additional_labels + style_labels + short_name_labels + tag_labels
     
 # Save data    
 f = open("beer_data_pickle.cpkl", 'wb')
