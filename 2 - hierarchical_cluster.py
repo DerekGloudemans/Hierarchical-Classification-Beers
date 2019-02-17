@@ -36,12 +36,62 @@ for i in range(0,len(names)):
 x = x[idx,:]
 names = [names[i] for i in idx]
 
+#intialize node_list
+# each entry stores ((child nodes) or None, distance between children, num of beers represeneted by node)
+node_list = []
+for i in range (0,len(x)):
+    node_list.append((None, 0,1))
 
+# this will be added and subtracted from to keep track of new and removed nodes
+active = [i for i in range(0,len(x))]
+    
 # calculate Euclidean distance between each pair of beers
 dist = np.zeros([np.size(x,0),np.size(x,0)])
-for i in range(0,np.size(dist,0)):
-    for j in range(0,np.size(dist,1)):
-        dist[i,j] = np.sqrt(sum(np.square(x[i,:] - x[j,:])))
+for i in active:
+    for j in active:
+        if i == j:
+            dist[i,j] = np.Infinity
+        else:
+            dist[i,j] = np.sqrt(np.sum(np.square(x[i,:] - x[j,:])))
         
-    if i%100 == 0:
+    if i%100 == 0 and False:
         print("On row {} of {}".format(i,np.size(dist,0)))
+        
+# at each step:
+        
+#select min non-zero distance
+min_arg = np.argmin(dist)
+i = min_arg // len(dist)
+j = min_arg % len(dist)
+
+#create new node that is weighted average of these locations and add row and column to dist
+node_list.append(((i,j),dist[i,j], node_list[i][2] + node_list[j][2]))
+
+# add new idx to index list
+active.append(len(node_list)-1)
+# remove old indices from index list
+active.remove(i)
+active.remove(j)
+
+
+# append new node weighted avg to end of x
+new_node_x = np.asmatrix(np.divide((np.multiply(x[i,:],node_list[i][2]) + np.multiply(x[j,:],node_list[j][2])), \
+                       (node_list[i][2]+ node_list[j][2])))
+x = np.concatenate((x,new_node_x),0)
+
+# calculate distance to all other nodes (reflect across diagonal)
+# add row and column to dist, then fill in (technically only need to fill in indices in active)
+new_row = np.zeros([1, np.size(dist,1)])
+dist = np.concatenate((dist,new_row),0)
+new_col = np.zeros([np.size(dist,0), 1])
+dist = np.concatenate((dist,new_col),1)
+
+new_idx = len(node_list)-1
+for i in active:
+    if i == new_idx:
+        dist[new_idx,i] = np.Infinity
+    else:
+        dist[i,new_idx] = np.sqrt(np.sum(np.square(x[i,:] - x[new_idx,:])))
+        dist[new_idx,i] = np.sqrt(np.sum(np.square(x[i,:] - x[new_idx,:])))
+        
+        
