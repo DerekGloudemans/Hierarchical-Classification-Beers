@@ -1,6 +1,13 @@
 
+#https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+# Please note - my implementation of the clustering is alarmingly simlar to scipy's implementation
+# However, I came up with this imlementation organically - I didn't look at any implementations until it came time to plot results
+# I did use the code from scipy.cluster.hierarchy.dendrogram to plot my result because I didn't want to fool around with manual plot encoding
+
+
 import numpy as np
 import _pickle as cPickle
+from scipy.cluster.hierarchy import dendrogram
 
 # load pickled data
 f = open("beer_data_pickle.cpkl", 'rb')
@@ -35,6 +42,7 @@ for i in range(0,len(names)):
                 idx.append(i)
                 break
 x = x[idx,:]
+x_orig =x
 names = [names[i] for i in idx]
 
 #intialize node_list
@@ -107,4 +115,15 @@ while len(active) > 1:
             dist[k,new_idx] = np.Infinity
             dist[new_idx,k] = np.Infinity
 
+# convert list structure into array structure for compatibility with scipy plotting
+hierarchy = np.zeros([len(x_orig)-1,4])
+      
+for i in range(0,len(hierarchy)):
+    item = node_list[i+len(x_orig)]
+    if item[0] != None:
+        hierarchy[i,0] = item[0][0]
+        hierarchy[i,1] = item[0][1]
+        hierarchy[i,2] = item[1]
+        hierarchy[i,3] = item[2]
         
+dendrogram(hierarchy)
