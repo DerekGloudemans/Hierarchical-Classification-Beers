@@ -1,5 +1,6 @@
 # This file contains all functions used for this assignment
 from pathlib import Path
+import matplotlib.pyplot as plt
 import numpy as np
 import _pickle as cPickle
 from scipy.cluster.hierarchy import dendrogram
@@ -302,3 +303,17 @@ def hierarchical_cluster(x,verbose = False):
             
     print("Hierarchical clustering complete.")
     return hierarchy
+
+
+def plot_dendrogram(hierarchy,names,depth = 2):
+    plt.figure(figsize = (10,20))
+    #use this line to plot in new window - %matplotlib auto
+    settings = {'orientation': 'left',
+                'truncate_mode': None,
+                'count_sort': 'ascending',
+                'distance_sort': 'descending',
+                'leaf_rotation': 0,
+                'leaf_font_size': 10,
+                'color_threshold':1}
+    dn = dendrogram(hierarchy, leaf_label_func = (lambda n: names[n]),**settings)
+    return dn

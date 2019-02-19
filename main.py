@@ -1,29 +1,19 @@
 # Main code, from which other functions are called
 
-#use this line to plot in new window - %matplotlib auto
-
-#import other files
+#import files and packages
 from pathlib import Path
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram
 import matplotlib.pyplot as plt
-
+from sklearn.decomposition import PCA
 import Utilfn
 
 
-def plot_dendrogram(hierarchy,names,depth = 2):
-    plt.figure(figsize = (10,20))
-    #plt.style.use('seaborn-notebook')
-    settings = {'orientation': 'left',
-                'truncate_mode': None,
-                'count_sort': 'ascending',
-                'distance_sort': True,
-                'leaf_rotation': 0,
-                'leaf_font_size': 10,
-                'color_threshold':1}
-    dn = dendrogram(hierarchy, leaf_label_func = (lambda n: names[n]),**settings)
-    return dn
 
+#def get_neighbors():
+
+#def scatter_plot(hierarchy, level = 1):
+#    R = dendrogram(hierarchy, color_threshold = 1)
 
 
 #define user parameters here or do it interactively
@@ -39,19 +29,40 @@ x, names, labels, beer_list = Utilfn.load_data(pickle_name)
 del pickle_name
 
 #prep data for hierarchical clustering
-wt = [10,0.15,.1,0.1]
-ds = 5000000
+wt = [10,0.15,0,0.15]
+ds = 5000
 include = ['blue moon', 'yazoo', 'coors', 'miller', 'laguanitas', 'dogfish'] 
 x,names = Utilfn.prep_data(x,names,wt,include,ds)
 del wt,ds
 
 #get hierarchical clustering
-hierarchy = Utilfn.hierarchical_cluster(x,verbose = True)
+hierarchy = Utilfn.hierarchical_cluster(x)
 
-#possibly - condense clusters
+
 
 
 # plot dendrogram with interactive coloring
-dn = plot_dendrogram(hierarchy,names)
+Utilfn.plot_dendrogram(hierarchy,names)
 
-# plot 2d space cloud with interactive coloring
+#get beer_cloud (sorted by closest)
+#possibly - condense clusters
+#plot 2d space cloud with interactive coloring based on hierarchical clustering colors
+
+R = dendrogram(hierarchy, color_threshold = 1)
+# I think these colors correspond to the nodes, not the leaves
+colors = R['color_list']
+order = R['leaves']
+color_labels = [x for _,x in sorted(zip(order,colors))]
+
+
+pca = PCA(n_components=2)
+x_red = pca.fit_transform(x)
+x_red = (x_red - x_red.min(axis=0))
+x_red = x_red/x_red.max(axis = 0)
+#plt.style.use('fivethirtyeight')
+
+fig, ax = plt.subplots(figsize= (10,10))
+ax.scatter(x_red[:,0],x_red[:,1])
+#for i in range(0,len(names)):
+#    plt.text(x_red[i,0],x_red[i,1],names[i],fontsize = 12)
+ax.axis('off')
