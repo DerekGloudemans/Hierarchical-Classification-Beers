@@ -213,7 +213,7 @@ def prep_data(x,names, feat_weights, include=[], downsample = 100):
     print("Data reduced to {} items for clustering.".format(len(names)))
     return x,names
 
-def hierarchical_cluster(x,verbose = False):
+def hierarchical_cluster(x,group_dist = 5, verbose = False):
     
     #store initial number of items
     num_items = len(x)
@@ -302,11 +302,117 @@ def hierarchical_cluster(x,verbose = False):
             hierarchy[i,3] = item[2]
             
     print("Hierarchical clustering complete.")
-    return hierarchy
+    return hierarchy, node_list
 
 
-def plot_dendrogram(hierarchy,names,depth = 2):
-    plt.figure(figsize = (10,20))
+def hierarchical_cluster_balanced(x,group_dist = 5, verbose = False):
+    
+    #store initial number of items
+    num_items = len(x)
+    
+    #intialize node_list
+    # each entry stores ((child nodes) or None, distance between children, num of beers represeneted by node)
+    node_list = []
+    for i in range (0,len(x)):
+        node_list.append((None, 0,1))
+    
+    # this will be added and subtracted from to keep track of new and removed nodes
+    active = [i for i in range(0,len(x))]
+    #  when a node is created, it is added to next_active and it's constituent nodes are removed
+    # at the end of the iteration, next_active becomes active
+    next_active = []    
+    
+    # calculate Euclidean distance between each pair of beers
+    dist = np.zeros([np.size(x,0),np.size(x,0)])
+    for i in active:
+        for j in active:
+            if i == j:
+                dist[i,j] = np.Infinity
+            else:
+                dist[i,j] = np.sqrt(np.sum(np.square(x[i,:] - x[j,:])))
+            
+        if i%100 == 0 and verbose:
+            print("Calculating distance for row {} of {}".format(i,np.size(dist,0)))
+            
+    # at each step:
+    while len(active) > 1:
+        if verbose:
+            print("Current number of active clusters: {}".format(len(active)))
+        
+        #select min non-zero distance - need to select only from active
+        dist_copy = np.ones([np.size(dist,0),np.size(dist,1)])*np.Infinity
+        for i in active:
+            for j in active:
+                    dist_copy[i,j] = dist[i,j]
+                    
+        min_arg = np.argmin(dist_copy)
+        i = min_arg // len(dist)
+        j = min_arg % len(dist)
+        
+        #create new node that is weighted average of these locations and add row and column to dist
+        node_list.append(((i,j),dist[i,j], node_list[i][2] + node_list[j][2]))
+        
+        # add new idx to index list
+        next_active.append(len(node_list)-1)
+        # remove old indices from index list
+        active.remove(i)
+        active.remove(j)
+        
+        #set row and column i and j (removed this round) to inf (so they don't get picked again)
+        dist[i,:] = np.Infinity
+        dist[:,i] = np.Infinity
+        dist[j,:] = np.Infinity
+        dist[:,j] = np.Infinity 
+    
+        
+        
+        # append new node weighted avg to end of x
+        new_node_x = np.asmatrix(np.divide((np.multiply(x[i,:],node_list[i][2]) + np.multiply(x[j,:],node_list[j][2])), \
+                               (node_list[i][2]+ node_list[j][2])))
+        x = np.concatenate((x,new_node_x),0)
+        
+        # calculate distance to all other nodes (reflect across diagonal)
+        # add row and column to dist, then fill in (technically only need to fill in indices in active)
+        new_row = np.zeros([1, np.size(dist,1)])
+        dist = np.concatenate((dist,new_row),0)
+        new_col = np.zeros([np.size(dist,0), 1])
+        dist = np.concatenate((dist,new_col),1)
+        
+        #problem is here 
+        new_idx = len(node_list)-1
+        for k in range(0,new_idx+1):
+            #if k in next_active:
+                if k == new_idx:
+                    dist[new_idx,k] = np.Infinity
+                else:
+                    dist[k,new_idx] = np.sqrt(np.sum(np.square(x[k,:] - x[new_idx,:])))
+                    dist[new_idx,k] = np.sqrt(np.sum(np.square(x[k,:] - x[new_idx,:])))
+
+    
+        #check if active is of length 1, if so, reset next_active
+        if len(active) < 2:
+            active = next_active + active
+            next_active = []
+    
+    # convert list structure into array structure for compatibility with scipy plotting
+    hierarchy = np.zeros([num_items-1,4])
+          
+    for i in range(0,len(hierarchy)):
+        item = node_list[i+num_items]
+        if item[0] != None:
+            hierarchy[i,0] = item[0][0]
+            hierarchy[i,1] = item[0][1]
+            hierarchy[i,2] = item[1]
+            hierarchy[i,3] = item[2]
+           
+    print("Hierarchical clustering complete.")
+    return hierarchy, node_list
+
+
+
+
+def plot_dendrogram(hierarchy,names,group_dist = 5):
+    plt.figure(figsize =(60,120))
     #use this line to plot in new window - %matplotlib auto
     settings = {'orientation': 'left',
                 'truncate_mode': None,
@@ -314,6 +420,6 @@ def plot_dendrogram(hierarchy,names,depth = 2):
                 'distance_sort': 'descending',
                 'leaf_rotation': 0,
                 'leaf_font_size': 10,
-                'color_threshold':1}
+                'color_threshold':group_dist}
     dn = dendrogram(hierarchy, leaf_label_func = (lambda n: names[n]),**settings)
     return dn
