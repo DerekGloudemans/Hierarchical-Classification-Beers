@@ -302,7 +302,7 @@ def hierarchical_cluster(x,group_dist = 5, verbose = False):
             hierarchy[i,3] = item[2]
             
     print("Hierarchical clustering complete.")
-    return hierarchy, node_list
+    return hierarchy, node_list, x
 
 
 def hierarchical_cluster_balanced(x,group_dist = 5, verbose = False):
@@ -406,8 +406,93 @@ def hierarchical_cluster_balanced(x,group_dist = 5, verbose = False):
             hierarchy[i,3] = item[2]
            
     print("Hierarchical clustering complete.")
-    return hierarchy, node_list
+    return hierarchy, node_list, x
 
+
+def get_cluster_items(node_list):
+    item_lists = []
+    for item in node_list:
+        items = []
+        if item[0] != None:
+            items.append(item[0][0])
+            items.append(item[0][1]) 
+            for subitem in item_lists[item[0][1]]:
+                items.append(subitem)
+            for subitem in item_lists[item[0][0]]:
+                items.append(subitem)
+        item_lists.append(sorted(list(set(items))))
+        
+    return item_lists
+
+
+# find the average distance from items to the cluster centroid
+def get_avg_dist(cluster_lists,x_mod):
+
+    avg_dist = np.zeros([len(cluster_lists)])
+    x = x_mod
+    
+    for i in range(0,len(cluster_lists)):
+        sum_dist = 0
+        for item in cluster_lists[i]:
+            sum_dist = sum_dist + np.sqrt(np.sum(np.square(x[i,:] - x[item,:])))
+        avg_dist[i] = sum_dist
+    return avg_dist
+
+
+
+
+# get average cluster distances per cluster number
+def plot_avg_dist(names,dists1, hierarchy1, dists2= None, hierarchy2 = None, num_inputs = 1):
+
+    avg_dists1 = []
+    active = [i for i in range(0,len(names))]
+    next_cluster = 0
+    while len(active) > 1:
+        dist = np.average(dists1[active])
+        avg_dists1.append(dist)
+        
+        #add next_cluster to active and remove its constituent cluster
+        active.append(next_cluster+len(names))
+        active.remove(int(hierarchy1[next_cluster,0]))
+        active.remove(int(hierarchy1[next_cluster,1]))
+        next_cluster = next_cluster + 1
+    dist = dists1[active[0]]
+    avg_dists1.append(dist)
+    
+    if True or num_inputs == 2:
+        avg_dists2 = []
+        active = [i for i in range(0,len(names))]
+        next_cluster = 0
+        while len(active) > 1:
+            dist = np.average(dists2[active])
+            avg_dists2.append(dist)
+            
+            #add next_cluster to active and remove its constituent cluster
+            active.append(next_cluster+len(names))
+            active.remove(int(hierarchy2[next_cluster,0]))
+            active.remove(int(hierarchy2[next_cluster,1]))
+            next_cluster = next_cluster + 1
+        dist = dists2[active[0]]
+        avg_dists2.append(dist)
+    
+    ax = [i for i in range(1,len(avg_dists1)+1)]
+    ax.reverse()
+    
+    plt.figure(figsize = (10,10))
+    plt.plot(ax,avg_dists1)
+    
+    if num_inputs ==2:
+        plt.plot(ax,avg_dists2)
+        plt.xlabel('Number of clusters')
+        plt.ylabel('Avg. distance within clusters')
+        plt.legend(['Unbalanced', 'Balanced'])
+        
+        plt.style.use('fivethirtyeight')
+        plt.rcParams.update({'font.size': 22})
+    
+    if num_inputs ==2:
+        return avg_dists1,avg_dists2    
+    return avg_dists1
 
 
 
