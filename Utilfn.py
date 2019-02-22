@@ -515,7 +515,21 @@ def get_most_representatives(cluster_lists,names,x_mod):
             most_rep.append((min_item,min_dist))
     return most_rep
 
+# this one's a doozy
+def convert_to_newick(aug_cluster_list,cluster_num):
+    
+    cluster = aug_cluster_list[cluster_num]
+    
+    #if no children (i.e. leaf node): output name
+    if cluster[0] == None:
+        out = cluster[3]
+    else:
+        # "({recurse on child }:distance to child1,{recurse on child2}:distance to child2)item_name" - this should be what it represents
+        out = "({}:{},{}:{}){}"\
+        .format(convert_to_newick(aug_cluster_list,cluster[0][0]),cluster[1],\
+                convert_to_newick(aug_cluster_list,cluster[0][1]),cluster[1],cluster[3])
 
+    return out
 
 
 def plot_dendrogram(hierarchy,names,group_dist = 5):
