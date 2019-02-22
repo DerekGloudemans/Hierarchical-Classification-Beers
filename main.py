@@ -46,17 +46,11 @@ for i in range(0,len(hierarchy)):
 for i in range(0,len(hierarchy2)):
     hierarchy2[i,2] = hierarchy2[i,2]+max([cl2[int(hierarchy2[i,0])][2],cl2[int(hierarchy2[i,1])][2]])
     
-# get intracluster distances  
+# plot intracluster distances  
 cluster_lists = Utilfn.get_cluster_items(cl)
 cluster_lists2 = Utilfn.get_cluster_items(cl2)
 dists1 = Utilfn.get_avg_dist(cluster_lists,x_mod)
 dists2 = Utilfn.get_avg_dist(cluster_lists2,x_mod)
-
-
-
 temp, temp2 = Utilfn.plot_avg_dist(names,dists1, hierarchy, dists2, hierarchy2 , num_inputs = 2)
 
-
-    
-
-
+reps1 = Utilfn.get_most_representatives(cluster_lists,names,x_mod)

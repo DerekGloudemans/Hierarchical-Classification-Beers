@@ -488,11 +488,33 @@ def plot_avg_dist(names,dists1, hierarchy1, dists2= None, hierarchy2 = None, num
         plt.legend(['Unbalanced', 'Balanced'])
         
         plt.style.use('fivethirtyeight')
-        plt.rcParams.update({'font.size': 22})
+        plt.rcParams.update({'font.size': 18})
     
     if num_inputs ==2:
         return avg_dists1,avg_dists2    
     return avg_dists1
+
+
+
+
+#get most representative item in cluster (i.e. closest to average)
+def get_most_representatives(cluster_lists,names,x_mod):
+    most_rep = []
+    for i in range(0,len(cluster_lists)):
+        if len(cluster_lists[i]) == 0:
+            most_rep.append((i,0))
+        else:
+            min_dist = np.Infinity
+            min_item = None
+            for item in cluster_lists[i]:
+                if item < len(names):
+                    dist = np.sqrt(np.sum(np.square(x_mod[i,:] - x_mod[item,:])))
+                    if dist < min_dist:
+                        min_item = item
+                        min_dist = dist
+            most_rep.append((min_item,min_dist))
+    return most_rep
+
 
 
 
