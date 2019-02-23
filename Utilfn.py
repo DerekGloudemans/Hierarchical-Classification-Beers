@@ -1,5 +1,4 @@
 # This file contains all functions used for this assignment
-from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import _pickle as cPickle
@@ -7,7 +6,8 @@ from scipy.cluster.hierarchy import dendrogram
 from collections import Counter
 import csv
 import re
-import string
+from ete3 import Tree, TreeStyle
+
 
 # COMMENTS HERE
 def pickle_beer_data(save_file, beer_file='raw_data.csv', \
@@ -479,6 +479,8 @@ def plot_avg_dist(names,dists1, hierarchy1, dists2= None, hierarchy2 = None, num
     ax.reverse()
     
     plt.figure(figsize = (10,10))
+    plt.style.use('fivethirtyeight')
+    plt.rcParams.update({'font.size': 18})
     plt.plot(ax,avg_dists1)
     
     if num_inputs ==2:
@@ -487,8 +489,7 @@ def plot_avg_dist(names,dists1, hierarchy1, dists2= None, hierarchy2 = None, num
         plt.ylabel('Avg. distance within clusters')
         plt.legend(['Unbalanced', 'Balanced'])
         
-        plt.style.use('fivethirtyeight')
-        plt.rcParams.update({'font.size': 18})
+
     
     if num_inputs ==2:
         return avg_dists1,avg_dists2    
@@ -515,6 +516,31 @@ def get_most_representatives(cluster_lists,names,x_mod):
             most_rep.append((min_item,min_dist))
     return most_rep
 
+
+def augment_cluster_list(cluster_lists,cl,x_mod,names):
+    reps = get_most_representatives(cluster_lists,names,x_mod)
+    
+    aug = []
+    for item in reps:
+        name = names[item[0]]
+        name = name.replace("(","-")
+        name = name.replace(")","-")
+        name = name.replace(":","-")
+        
+        if item[1] == 0:
+            aug.append(name)
+        else:
+            aug.append("Archetype={}".format(name))
+    #add item names to cluster_list as an additional element
+            
+    aug_cluster_list = []
+    for i in range (0,len(cl)):
+        aug_cluster_list.append((cl[i][0],cl[i][1],cl[i][2],aug[i]))
+    
+    return aug_cluster_list
+
+
+
 # this one's a doozy
 def convert_to_newick(aug_cluster_list,cluster_num):
     
@@ -532,8 +558,8 @@ def convert_to_newick(aug_cluster_list,cluster_num):
     return out
 
 
-def plot_dendrogram(hierarchy,names,group_dist = 5):
-    plt.figure(figsize =(60,120))
+def plot_dendrogram(hierarchy,names,group_dist = 5, dim = (60,120)):
+    plt.figure(figsize =dim)
     #use this line to plot in new window - %matplotlib auto
     settings = {'orientation': 'left',
                 'truncate_mode': None,
@@ -544,3 +570,44 @@ def plot_dendrogram(hierarchy,names,group_dist = 5):
                 'color_threshold':group_dist}
     dn = dendrogram(hierarchy, leaf_label_func = (lambda n: names[n]),**settings)
     return dn
+
+
+def plot_circular(aug_cluster_list, db = -1):
+    circular_style = TreeStyle()
+    circular_style.mode = "c" # draw tree in circular mode
+    circular_style.scale = 20
+    circular_style.arc_span = 360
+    
+    if db > 0:
+        newick = convert_to_newick_db(aug_cluster_list,len(aug_cluster_list)-1,db)
+        circular_style.mode = 'r'
+    else:
+        newick = convert_to_newick(aug_cluster_list,len(aug_cluster_list)-1)
+    newick = newick + ':0;'
+    
+    t = Tree(newick,format = 1)
+    t.show(tree_style=circular_style)
+    
+# this one's a doozy
+def convert_to_newick_db(aug_cluster_list,cluster_num,db):
+    
+    cluster = aug_cluster_list[cluster_num]
+    print(db)
+    
+    #if no children (i.e. leaf node): output name
+    if cluster[0] == None:
+        out = cluster[3]
+    
+    # reached user-defined depth bound
+    elif db == 0:
+        # now we need to condense all further nodes as branches from this node
+        out = "{},{}"\
+        .format(convert_to_newick_db(aug_cluster_list,cluster[0][0],0),\
+                convert_to_newick_db(aug_cluster_list,cluster[0][1],0))
+    else:
+        # "({recurse on child }:distance to child1,{recurse on child2}:distance to child2)item_name" - this should be what it represents
+        out = "({}:{},{}:{})"\
+        .format(convert_to_newick_db(aug_cluster_list,cluster[0][0],db-1),cluster[1],\
+                convert_to_newick_db(aug_cluster_list,cluster[0][1],db-1),cluster[1])
+
+    return out
