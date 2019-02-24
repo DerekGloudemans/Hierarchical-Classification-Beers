@@ -558,7 +558,12 @@ def convert_to_newick(aug_cluster_list,cluster_num):
     return out
 
 
-def plot_dendrogram(hierarchy,names,group_dist = 5, dim = (60,120)):
+def plot_dendrogram(hierarchy,cl,names,group_dist = 5, dim = (60,120)):
+    
+    # extends lines to clean plot
+    for i in range(0,len(hierarchy)):
+        hierarchy[i,2] = hierarchy[i,2]+max([cl[int(hierarchy[i,0])][2],cl[int(hierarchy[i,1])][2]])
+
     plt.figure(figsize =dim)
     #use this line to plot in new window - %matplotlib auto
     settings = {'orientation': 'left',
@@ -592,7 +597,6 @@ def plot_circular(aug_cluster_list, db = -1):
 def convert_to_newick_db(aug_cluster_list,cluster_num,db):
     
     cluster = aug_cluster_list[cluster_num]
-    print(db)
     
     #if no children (i.e. leaf node): output name
     if cluster[0] == None:

@@ -36,11 +36,6 @@ del wt,ds
 hierarchy,cl,x_mod = Utilfn.hierarchical_cluster(x,verbose = False)
 hierarchy2, cl2 ,x_mod2 = Utilfn.hierarchical_cluster_balanced(x)
 
-# extends lines to clean plot
-for i in range(0,len(hierarchy)):
-    hierarchy[i,2] = hierarchy[i,2]+max([cl[int(hierarchy[i,0])][2],cl[int(hierarchy[i,1])][2]])
-for i in range(0,len(hierarchy2)):
-    hierarchy2[i,2] = hierarchy2[i,2]+max([cl2[int(hierarchy2[i,0])][2],cl2[int(hierarchy2[i,1])][2]])
     
 # plot intracluster distances  
 cluster_lists = Utilfn.get_cluster_items(cl)
@@ -55,5 +50,5 @@ aug_cluster_list = Utilfn.augment_cluster_list(cluster_lists,cl,x_mod,names)
 if show:
     Utilfn.plot_avg_dist(names,dists1, hierarchy, dists2, hierarchy2 , num_inputs = 2)
     Utilfn.plot_circular(aug_cluster_list,depth_bound)
-    Utilfn.plot_dendrogram(hierarchy, names, group_dist, dim = (20,40))
+    Utilfn.plot_dendrogram(hierarchy,cl, names, group_dist, dim = (20,40))
     
