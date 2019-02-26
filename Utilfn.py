@@ -405,7 +405,7 @@ def hierarchical_cluster_balanced(x,group_dist = 5, verbose = False):
             hierarchy[i,2] = item[1]
             hierarchy[i,3] = item[2]
            
-    print("Hierarchical clustering complete.")
+    print("Balanced hierarchical clustering complete.")
     return hierarchy, node_list, x
 
 
@@ -497,7 +497,6 @@ def plot_avg_dist(names,dists1, hierarchy1, dists2= None, hierarchy2 = None, num
 
 
 
-
 #get most representative item in cluster (i.e. closest to average)
 def get_most_representatives(cluster_lists,names,x_mod):
     most_rep = []
@@ -565,34 +564,43 @@ def plot_dendrogram(hierarchy,cl,names,group_dist = 5, dim = (60,120)):
         hierarchy[i,2] = hierarchy[i,2]+max([cl[int(hierarchy[i,0])][2],cl[int(hierarchy[i,1])][2]])
 
     plt.figure(figsize =dim)
+    plt.style.use('fivethirtyeight')
+    plt.rcParams.update({'font.size': 18})
+    
     #use this line to plot in new window - %matplotlib auto
     settings = {'orientation': 'left',
                 'truncate_mode': None,
                 'count_sort': 'ascending',
                 'distance_sort': 'descending',
                 'leaf_rotation': 0,
-                'leaf_font_size': 10,
+                'leaf_font_size': 25,
                 'color_threshold':group_dist}
     dn = dendrogram(hierarchy, leaf_label_func = (lambda n: names[n]),**settings)
+    
+    plt.savefig("dendrogram.png", bbox_inches = 'tight', pad_inches = 0.5)
+    
     return dn
 
 
-def plot_circular(aug_cluster_list, db = -1):
+def plot_newick(aug_cluster_list,mode = 'c', db = -1):
     circular_style = TreeStyle()
-    circular_style.mode = "c" # draw tree in circular mode
+    circular_style.mode = mode # draw tree in circular mode
     circular_style.scale = 20
     circular_style.arc_span = 360
     
     if db > 0:
         newick = convert_to_newick_db(aug_cluster_list,len(aug_cluster_list)-1,db)
-        circular_style.mode = 'r'
+        circular_style.mode = mode
     else:
         newick = convert_to_newick(aug_cluster_list,len(aug_cluster_list)-1)
     newick = newick + ':0;'
     
     t = Tree(newick,format = 1)
     t.show(tree_style=circular_style)
-    
+    if True:
+        t.render('tree3.png',w=100, units = 'in', tree_style = circular_style)
+
+
 # this one's a doozy
 def convert_to_newick_db(aug_cluster_list,cluster_num,db):
     

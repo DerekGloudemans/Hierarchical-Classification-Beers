@@ -3,16 +3,15 @@
 #import files and packages
 from pathlib import Path
 import numpy as np
-from scipy.cluster.hierarchy import dendrogram
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
 import Utilfn
 
 # user parameters here
 show = True
-ds = 600000
-depth_bound = 10
-include = ['blue moon','yazoo','coors','miller', 'yuengling', 'laguanitas','dogfish', 'tennessee brew works', 'smith and lentz', 'smith & lentz', 'bearded iris', 'jackalope', 'little harpeth', 'southern grist', 'fat bottom', 'new heights', 'tailgate', 'black abbey', 'good people', 'distihl'] 
+ds = 500 # controls the downsample ratio - if over 25000, only beers from include will be included
+depth_bound = 20
+mode = 'r'
+#include = ['blue moon','yazoo','coors','miller', 'yuengling', 'laguanitas','dogfish', 'tennessee brew works', 'smith and lentz', 'smith & lentz', 'bearded iris', 'jackalope', 'little harpeth', 'southern grist', 'fat bottom', 'new heights', 'tailgate', 'black abbey', 'good people', 'distihl'] 
+include = ['blue moon','yazoo','coors','miller', 'tennessee brew works', 'smith and lentz', 'smith & lentz', 'bearded iris', 'jackalope', 'southern grist', 'fat bottom','distihl'] 
 
 
 # check if pickle file already exists
@@ -33,7 +32,7 @@ group_dist= len(names)/10
 del wt,ds
 
 # get hierarchical clustering
-hierarchy,cl,x_mod = Utilfn.hierarchical_cluster(x,verbose = False)
+hierarchy,cl,x_mod = Utilfn.hierarchical_cluster(x,verbose = True)
 hierarchy2, cl2 ,x_mod2 = Utilfn.hierarchical_cluster_balanced(x)
 
     
@@ -49,6 +48,6 @@ aug_cluster_list = Utilfn.augment_cluster_list(cluster_lists,cl,x_mod,names)
 
 if show:
     Utilfn.plot_avg_dist(names,dists1, hierarchy, dists2, hierarchy2 , num_inputs = 2)
-    Utilfn.plot_circular(aug_cluster_list,depth_bound)
-    Utilfn.plot_dendrogram(hierarchy,cl, names, group_dist, dim = (20,40))
+    Utilfn.plot_newick(aug_cluster_list, mode, depth_bound)
+    Utilfn.plot_dendrogram(hierarchy,cl, names, group_dist, dim = (40,80))
     
