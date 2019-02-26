@@ -1,4 +1,4 @@
-# This file contains all functions used for this assignment
+# This file contains all utility functions used for this assignment
 import matplotlib.pyplot as plt
 import numpy as np
 import _pickle as cPickle
@@ -9,8 +9,10 @@ import re
 from ete3 import Tree, TreeStyle
 
 
-# COMMENTS HERE
-def pickle_beer_data(save_file, beer_file='raw_data.csv', \
+#------------------------ pickle_beer_data_brewery_DB ------------------------#
+# This function loads the Excel csv file of breweryDB data and parses it into a
+# matrix of items x features, as well as an item name list and a label name list
+def pickle_beer_data_breweryDB(save_file, beer_file='raw_data.csv', \
                      brewery_file = 'brewery-brewdb.csv', tag_file = 'tag_inclusion_list.csv' ):
     
     # Load data from csv file
@@ -169,6 +171,11 @@ def pickle_beer_data(save_file, beer_file='raw_data.csv', \
     f.close()    
     print("Data pickled.")
 
+
+#------------------------ pickle_beer_data_kaggle ------------------------#
+# This function loads the Excel csv file of the Kaggle Craft beers data and 
+# parses it into a matrix of items x features, as well as an item name list 
+# and a label name list
 def pickle_kaggle_data():
     # Load data from csv file
     beer_list = []
@@ -224,7 +231,13 @@ def pickle_kaggle_data():
     print("Data pickled.")
 
 
-#COMMENTS HERE
+#---------------------------------- load_data --------------------------------#
+# This function loads data from pickle file specified as input
+# returns:
+# x - numpy array of item features 
+# names - list of names for each item (beer)
+# labels - list of labels for each feature
+# beer_list - list of beers, passed as legacy data and not used further
 def load_data(file_name):
     
     f = open(file_name, 'rb')
@@ -235,7 +248,13 @@ def load_data(file_name):
     return x_original, names, labels, beer_list
 
 
-# COMMENTS HERE
+#---------------------------------- load_data --------------------------------#
+# This function reduces the size of x by the specified ratio (but includes all)
+# items with a name that contain a string in include, and also normalizes and 
+# weights each feature
+# returns:
+# x - numpy array of item normalized and weighted features for reduced dataset
+# names - list of names for each item (beer) for reduced dataset
 def prep_data(x,names, feat_weights, include=[], downsample = 100):
     # normalize x and weight each feature so min is 0, max is 1
     x_from_min = x-x.min(axis=0) 
@@ -269,7 +288,18 @@ def prep_data(x,names, feat_weights, include=[], downsample = 100):
     print("Data reduced to {} items for clustering.".format(len(names)))
     return x,names
 
-def hierarchical_cluster(x,group_dist = 5, verbose = False):
+
+#------------------------- hierarchical cluster ------------------------------#
+# This function clusters data hierarchically via a bottom-up approach and
+# Euclidean distance metric
+# returns:
+# x_mod - numpy array of item features and new node features
+# node_list - list of each node in the structure. Each node contains the values:
+    # (subnode1 if any, subnode2 if any, distance between nodes,
+    # number of items in cluster)
+# hierarchy - numopy array of the same information as in node_list, except only
+    # branch nodes are included (i.e. no leaf, single item nodes)
+def hierarchical_cluster(x, verbose = False):
     
     #store initial number of items
     num_items = len(x)
@@ -361,6 +391,16 @@ def hierarchical_cluster(x,group_dist = 5, verbose = False):
     return hierarchy, node_list, x
 
 
+#------------------------- hierarchical cluster ------------------------------#
+# This function clusters data hierarchically via a bottom-up approach and
+# Euclidean distance metric, creating a balanced tree structure
+# returns:
+# x_mod - numpy array of item features and new node features
+# node_list - list of each node in the structure. Each node contains the values:
+    # (subnode1 if any, subnode2 if any, distance between nodes,
+    # number of items in cluster)
+# hierarchy - numopy array of the same information as in node_list, except only
+    # branch nodes are included (i.e. no leaf, single item nodes)
 def hierarchical_cluster_balanced(x,group_dist = 5, verbose = False):
     
     #store initial number of items
@@ -465,6 +505,11 @@ def hierarchical_cluster_balanced(x,group_dist = 5, verbose = False):
     return hierarchy, node_list, x
 
 
+#-------------------------- get_cluster_items --------------------------------#
+# This function finds all items that are in a cluster (node) or its constituent nodes
+# returns:
+# item_lists - list of lists, where list item i is a list of all items (beers)
+    # contained within cluster (node) i in node_list 
 def get_cluster_items(node_list):
     item_lists = []
     for item in node_list:
@@ -481,7 +526,12 @@ def get_cluster_items(node_list):
     return item_lists
 
 
-# find the average distance from items to the cluster centroid
+#---------------------------- get_avg_dist  ----------------------------------#
+# This function finds the average distance from each item in a cluster to the 
+# centroid of the cluster
+# returns:
+# avg_dist - a list of distances, where item i in the lists corresponds to the 
+    #average intracluster distance to centroid for cluster i in node_list
 def get_avg_dist(cluster_lists,x_mod):
 
     avg_dist = np.zeros([len(cluster_lists)])
@@ -497,7 +547,12 @@ def get_avg_dist(cluster_lists,x_mod):
 
 
 
-# get average cluster distances per cluster number
+#--------------------------- plot_avg_dist  ----------------------------------#
+# This function plots the average intracluster distance for one or optionally 2
+# heiarchical structures as created by hierarchical_cluster
+# returns:
+# avg_dists1 - result of call to get_avg_dist for hierarchy 1
+    #avg_dists2 - result of call to get_avg_dist for hierarchy 1, if input
 def plot_avg_dist(names,dists1, hierarchy1, dists2= None, hierarchy2 = None, num_inputs = 1):
 
     avg_dists1 = []
@@ -553,7 +608,12 @@ def plot_avg_dist(names,dists1, hierarchy1, dists2= None, hierarchy2 = None, num
 
 
 
-#get most representative item in cluster (i.e. closest to average)
+#----------------------- get_most_representatives ----------------------------#
+# This function returns the index (in x) of the most representative item (i.e.
+# the item closest to the cluster centroid) for each cluster in the clustering
+# returns:
+# most_rep - a list of indices, where each item i in the list represents the most
+    # representative item (beer) for cluster i in node_list or cluster_lists
 def get_most_representatives(cluster_lists,names,x_mod):
     most_rep = []
     for i in range(0,len(cluster_lists)):
@@ -571,7 +631,13 @@ def get_most_representatives(cluster_lists,names,x_mod):
             most_rep.append((min_item,min_dist))
     return most_rep
 
-
+#------------------------ augment_cluster_list -------------------------------#
+# This function adds to each node from node_)list the item name, replacing characters
+# incompatible with the Newick Tree format. This function is a precursor to 
+# conversion into Newick Tree format
+# returns:
+# aug_cluster_list- same as node_list, but with an additional field that holds 
+    # item name at the end of each item tuple
 def augment_cluster_list(cluster_lists,cl,x_mod,names):
     reps = get_most_representatives(cluster_lists,names,x_mod)
     
@@ -595,8 +661,12 @@ def augment_cluster_list(cluster_lists,cl,x_mod,names):
     return aug_cluster_list
 
 
-
-# this one's a doozy
+#------------------------ convert_to_newick -------------------------------#
+# Recursively converts an aug_cluster_list representation of a tree into 
+# Newick Tree format. Note that the string ":0;" must be added to the output
+# as this could not be easily added inside the function due to recursion
+#returns:
+#out - string newick representation of hierarchical clustering
 def convert_to_newick(aug_cluster_list,cluster_num):
     
     cluster = aug_cluster_list[cluster_num]
@@ -612,53 +682,15 @@ def convert_to_newick(aug_cluster_list,cluster_num):
 
     return out
 
-
-def plot_dendrogram(hierarchy,cl,names,group_dist = 5, dim = (60,120)):
-    
-    # extends lines to clean plot
-    for i in range(0,len(hierarchy)):
-        hierarchy[i,2] = hierarchy[i,2]+max([cl[int(hierarchy[i,0])][2],cl[int(hierarchy[i,1])][2]])
-
-    plt.figure(figsize =dim)
-    plt.style.use('fivethirtyeight')
-    plt.rcParams.update({'font.size': 18})
-    
-    #use this line to plot in new window - %matplotlib auto
-    settings = {'orientation': 'left',
-                'truncate_mode': None,
-                'count_sort': 'ascending',
-                'distance_sort': 'descending',
-                'leaf_rotation': 0,
-                'leaf_font_size': 25,
-                'color_threshold':group_dist}
-    dn = dendrogram(hierarchy, leaf_label_func = (lambda n: names[n]),**settings)
-    
-    plt.savefig("dendrogram.png", bbox_inches = 'tight', pad_inches = 0.5)
-    
-    return dn
-
-
-def plot_newick(aug_cluster_list,mode = 'c', db = -1):
-    circular_style = TreeStyle()
-    circular_style.mode = mode # draw tree in circular mode
-    circular_style.scale = 20
-    circular_style.arc_span = 360
-    
-    if db > 0:
-        newick = convert_to_newick_db(aug_cluster_list,len(aug_cluster_list)-1,db)
-        circular_style.mode = mode
-    else:
-        newick = convert_to_newick(aug_cluster_list,len(aug_cluster_list)-1)
-    newick = newick + ':0;'
-    
-    t = Tree(newick,format = 1)
-    t.show(tree_style=circular_style)
-    if True:
-        t.render('tree3.png',w=100, units = 'in', tree_style = circular_style)
-
-
-# this one's a doozy
-def convert_to_newick_db(aug_cluster_list,cluster_num,db):
+#------------------------ convert_to_newick_db -------------------------------#
+# Recursively converts an aug_cluster_list representation of a tree into 
+# Newick Tree format. if db is specified, this indicates the maximum number of 
+# branches that will be expanded before making all additional subnodes direct
+# children of the node. Note that the string ":0;" must be added to the output
+# as this could not be easily added inside the function due to recursion
+#returns:
+#out - string newick representation of depth-bounded hierarchical clustering
+def convert_to_newick_db(aug_cluster_list,cluster_num,db=100):
     
     cluster = aug_cluster_list[cluster_num]
     
@@ -679,3 +711,56 @@ def convert_to_newick_db(aug_cluster_list,cluster_num,db):
                 convert_to_newick_db(aug_cluster_list,cluster[0][1],db-1),cluster[1])
 
     return out
+
+
+#---------------------------- plot_dendrogram --------------------------------#
+# Plots a dendrogram representation of the hierarchical clustering specified by
+# hierarchy, coloring items up to group_dist from one another in the same color
+# dim - specifies size of figure
+def plot_dendrogram(hierarchy,cl,names,group_dist = 5, dim = (60,120)):
+    
+    # extends lines to clean plot
+    for i in range(0,len(hierarchy)):
+        hierarchy[i,2] = hierarchy[i,2]+max([cl[int(hierarchy[i,0])][2],cl[int(hierarchy[i,1])][2]])
+
+    plt.figure(figsize =dim)
+    plt.style.use('fivethirtyeight')
+    plt.rcParams.update({'font.size': 18})
+    
+    #use this line to plot in new window - %matplotlib auto
+    settings = {'orientation': 'left',
+                'truncate_mode': None,
+                'count_sort': 'ascending',
+                'distance_sort': 'descending',
+                'leaf_rotation': 0,
+                'leaf_font_size': 25,
+                'color_threshold':group_dist}
+    dendrogram(hierarchy, leaf_label_func = (lambda n: names[n]),**settings)
+    
+    if False:
+        plt.savefig("dendrogram.png", bbox_inches = 'tight', pad_inches = 0.5)
+    
+
+#----------------------------- plot_newick -----------------------------------#
+# Plots a dendrogram representation of the hierarchical clustering specified by 
+# aug_cluster_list, converting it into Newick Tree format first. Plots using the
+# ete3 module (must be installed prior to use of this function).
+# mode - 'c' or 'r' will plot as a circular or rectangular tree, respectively
+# db - if -1, no depth bound is used, otherwise, specifies the depth bound for the plot
+def plot_newick(aug_cluster_list,mode = 'c', db = -1):
+    circular_style = TreeStyle()
+    circular_style.mode = mode # draw tree in circular mode
+    circular_style.scale = 20
+    circular_style.arc_span = 360
+    
+    if db > 0:
+        newick = convert_to_newick_db(aug_cluster_list,len(aug_cluster_list)-1,db)
+        circular_style.mode = mode
+    else:
+        newick = convert_to_newick(aug_cluster_list,len(aug_cluster_list)-1)
+    newick = newick + ':0;'
+    
+    t = Tree(newick,format = 1)
+    t.show(tree_style=circular_style)
+    if False:
+        t.render('tree3.png',w=100, units = 'in', tree_style = circular_style)

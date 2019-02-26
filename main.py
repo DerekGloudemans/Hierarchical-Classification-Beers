@@ -3,7 +3,7 @@ from pathlib import Path
 import Utilfn
 
 ####### user-specified parameters entered here #######
-ds = 10 # controls the downsample ratio to limit data size - if over 25000, only beers from include will be included
+ds = 200 # controls the downsample ratio to limit data size - if over 25000, only beers from include will be included
 depth_bound = 200 # controls maximum hierarchical depth
 mode = 'r' #'r' plots Newick tree in rectangular form, 'c' in circular form
 kaggle = False # true switches to Kaggle dataset
@@ -22,8 +22,10 @@ if kaggle:
 # check if pickle file already exists    
 f= Path(pickle_name)
 if not(f.is_file()):
-    Utilfn.pickle_beer_data(pickle_name)
-
+    if kaggle:
+        Utilfn.pickle_beer_data_kaggle(pickle_name)
+    else:
+        Utilfn.pickle_beer_data_breweryDB(pickle_name)
 # load data    
 x, names, labels, beer_list = Utilfn.load_data(pickle_name)
 del pickle_name
