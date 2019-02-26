@@ -169,6 +169,60 @@ def pickle_beer_data(save_file, beer_file='raw_data.csv', \
     f.close()    
     print("Data pickled.")
 
+def pickle_kaggle_data():
+    # Load data from csv file
+    beer_list = []
+    file1 = open("beers-kaggle.csv", encoding = 'utf-8')
+    csv_reader = csv.reader(file1,delimiter = ',')
+    
+    for item in csv_reader:
+        beer = {}
+        beer["abv"] = item[0]
+        beer["ibu"] = item[1]
+        beer["style"] = item[2]
+        beer["name"] = item[3]
+    
+        beer_list.append(beer)
+    
+    file1.close()  
+    del beer_list[0] # tags    
+    print("All beers appended to beer list")
+    
+    # create x_labels
+    names = []
+    for item in beer_list:
+        names.append(item['name'])
+        
+    #short_name_labels
+    style_labels = []
+    for item in beer_list:
+        style_labels.append(item['style'])
+    
+    style_labels = sorted(list(set(style_labels)))
+    
+    # create x1
+    x1 = np.zeros([len(beer_list),2])
+    for i in range(0,len(beer_list)):
+        x1[i,0] = beer_list[i]["abv"]
+        x1[i,1] = beer_list[i]["ibu"]
+        
+    # create x2
+    x2 = np.zeros([len(beer_list),len(style_labels)]) 
+    for i in range(0,len(beer_list)):
+        item = beer_list[i]
+        idx = style_labels.index(item['style'])
+        x2[i,idx] = 1        
+        
+        # compile all features
+    x = np.concatenate((x1,x2),1)
+    labels = ["abv", "ibu"] + style_labels 
+        
+    # Save data    
+    f = open("beer_data_pickle_kaggle.cpkl", 'wb')
+    cPickle.dump((x,names,labels,beer_list),f)
+    f.close()    
+    print("Data pickled.")
+
 
 #COMMENTS HERE
 def load_data(file_name):
@@ -187,13 +241,15 @@ def prep_data(x,names, feat_weights, include=[], downsample = 100):
     x_from_min = x-x.min(axis=0) 
     x = x_from_min/ x_from_min.max(axis=0)
     
-    # weight each feature to give it significance in determining similarity
-    weights = np.ones(np.size(x,1))
-    weights[0:5] = feat_weights[0] # weights quantified variables
-    weights[5:122] = feat_weights[1] #weights short names
-    weights[122:135] = feat_weights[2] # weights styles
-    weights[135:] = feat_weights[3]
-    x = np.multiply(x,weights)
+    if len(x[1]) >100:
+        # weight each feature to give it significance in determining similarity
+        weights = np.ones(np.size(x,1))
+        weights[0:5] = feat_weights[0] # weights quantified variables
+        weights[5:122] = feat_weights[1] #weights short names
+        weights[122:135] = feat_weights[2] # weights styles
+        weights[135:] = feat_weights[3]
+        x = np.multiply(x,weights)
+    
     
     
     # filter out some data
