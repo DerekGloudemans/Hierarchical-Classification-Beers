@@ -7,3 +7,5 @@ Please refer to Report.docx for a more detailed summary of the project.
 main.py - run this file
 
 Utilfn.py - contains all functions used by main.py
+
+![](Examples/example_kaggle.png)
